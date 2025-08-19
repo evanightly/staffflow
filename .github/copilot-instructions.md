@@ -2,7 +2,7 @@
 
 This is laravel 12 project using inertiajs with reactjs as its frontend framework, shadcn and magicui as its component libraries, the main business project is:
 
-1. RBAC, Role: Super Admin and Team
+1. RBAC, Role: Super Admin and Team using Spatie Permission (Already Installed)
 2. (Super Admin) Manage User Roles
 3. (Super Admin) Import User data:
     1. Upload CSV/Excel file of user list

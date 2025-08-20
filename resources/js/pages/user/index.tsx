@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { Role, User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { CheckCircle, Edit, Eye, FileSpreadsheet, Plus, Search, Trash2, Users as UsersIcon, XCircle } from 'lucide-react';
+import { CheckCircle, Download, Edit, Eye, FileSpreadsheet, Plus, Search, Trash2, Users as UsersIcon, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -55,6 +55,12 @@ export default function Index({ users }: Props) {
                             <Link href={route('users.import.index')}>
                                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                                 Import Users
+                            </Link>
+                        </Button>
+                        <Button variant="outline" asChild>
+                            <Link href={route('users.export.index')}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Export Users
                             </Link>
                         </Button>
                         <Button asChild>

@@ -42,6 +42,7 @@ export function DataTableViewOptions<TData>({
           .map((column) => {
             return (
               <DropdownMenuCheckboxItem
+                onSelect={(e) => {e.preventDefault();}}
                 key={column.id}
                 className="capitalize"
                 checked={column.getIsVisible()}

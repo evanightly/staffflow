@@ -1,0 +1,109 @@
+name: Deploy to InfinityFree via FTP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    env:
+      # Where to upload the Laravel core (non-public) folder on the server (outside webroot)
+      SERVER_APP_DIR: /laravel-app/
+      # InfinityFree web root
+      SERVER_HTDOCS_DIR: /htdocs/
+      # Default to FTPS (Explicit TLS). Set a repository secret FTP_PROTOCOL=ftp to force plain FTP.
+      FTP_PROTOCOL: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: |
+          composer install \
+            --no-dev \
+            --prefer-dist \
+            --no-interaction \
+            --no-progress \
+            --optimize-autoloader
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Build assets
+        run: |
+          npm ci || npm install
+          npm run build
+
+      - name: Prepare deploy folders (split app and htdocs)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p deploy-app deploy-htdocs
+
+          # Copy everything except public and dev-only stuff into deploy-app
+          rsync -a --delete \
+            --exclude ".git/" \
+            --exclude ".github/" \
+            --exclude "node_modules/" \
+            --exclude "tests/" \
+            --exclude "public/" \
+            --exclude ".env" \
+            --exclude "storage/framework/cache/*" \
+            --exclude "storage/framework/sessions/*" \
+            --exclude "storage/logs/*" \
+            ./ deploy-app/
+
+          # Copy only the public folder contents into deploy-htdocs
+          rsync -a public/ deploy-htdocs/
+
+          # Adjust index.php to point to the sibling /laravel-app folder
+          # From __DIR__.'/../vendor/autoload.php' -> __DIR__.'/../laravel-app/vendor/autoload.php'
+          # From __DIR__.'/../bootstrap/app.php'   -> __DIR__.'/../laravel-app/bootstrap/app.php'
+          if [[ -f deploy-htdocs/index.php ]]; then
+            sed -i "s|../vendor/autoload.php|../laravel-app/vendor/autoload.php|g" deploy-htdocs/index.php
+            sed -i "s|../bootstrap/app.php|../laravel-app/bootstrap/app.php|g" deploy-htdocs/index.php
+          fi
+
+      - name: Upload Laravel core (outside webroot)
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          port: ${{ secrets.FTP_PORT || 21 }}
+          protocol: ${{ env.FTP_PROTOCOL }}
+          local-dir: deploy-app/
+          server-dir: ${{ env.SERVER_APP_DIR }}
+          # Remove files not present locally to keep target clean (safe for a dedicated folder)
+          dangerous-clean-slate: true
+          exclude: |
+            **/.git*
+            **/node_modules/**
+
+      - name: Upload public files (htdocs)
+        uses: SamKirkland/FTP-Deploy-Action@v4
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          port: ${{ secrets.FTP_PORT || 21 }}
+          protocol: ${{ env.FTP_PROTOCOL }}
+          local-dir: deploy-htdocs/
+          server-dir: ${{ env.SERVER_HTDOCS_DIR }}
+          # This will remove InfinityFree's default index2.html on first deploy
+          dangerous-clean-slate: true
+          exclude: |
+            **/.git*

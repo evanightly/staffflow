@@ -35,6 +35,9 @@ export interface User {
     id: number;
     name: string;
     email: string;
+    gender?: string | null;
+    address?: string | null;
+    phone_number?: string | null;
     avatar?: string;
     email_verified_at: string | null;
     created_at: string;

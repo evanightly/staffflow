@@ -103,11 +103,19 @@ class UserController extends Controller implements HasMiddleware
     {
         $validated = $request->validated();
 
-        $user->update([
+        $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'password' => isset($validated['password']) ? bcrypt($validated['password']) : $user->password,
-        ]);
+            'gender' => $validated['gender'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'phone_number' => $validated['phone_number'] ?? null,
+        ];
+
+        if (isset($validated['password']) && ! empty($validated['password'])) {
+            $updateData['password'] = bcrypt($validated['password']);
+        }
+
+        $user->update($updateData);
 
         if (isset($validated['roles'])) {
             $roles = Role::whereIn('id', $validated['roles'])->get();

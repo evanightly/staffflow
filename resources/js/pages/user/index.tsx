@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import AppLayout from '@/layouts/app-layout';
 import { Role, User } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { CheckCircle, Edit, Eye, Plus, Search, Trash2, Users as UsersIcon, XCircle } from 'lucide-react';
+import { CheckCircle, Edit, Eye, FileSpreadsheet, Plus, Search, Trash2, Users as UsersIcon, XCircle } from 'lucide-react';
 import { useState } from 'react';
 
 interface Props {
@@ -25,8 +25,6 @@ interface Props {
 }
 
 export default function Index({ users }: Props) {
-    console.log(users);
-
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredUsers = users.filter(
@@ -52,12 +50,20 @@ export default function Index({ users }: Props) {
                             <p className="text-muted-foreground">Manage system users and their access</p>
                         </div>
                     </div>
-                    <Button asChild>
-                        <Link href={route('users.create')}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add User
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" asChild>
+                            <Link href={route('users.import.index')}>
+                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                                Import Users
+                            </Link>
+                        </Button>
+                        <Button asChild>
+                            <Link href={route('users.create')}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add User
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
 
                 <Card>

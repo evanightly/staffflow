@@ -11,7 +11,7 @@ This is laravel 12 project using inertiajs with reactjs as its frontend framewor
     2. Store the user data in the database
     3. View list of user as a datatable
 4. (Super Admin) Export Selected User list
-    1. Add a page that show datatable of users
+    1. Add a page that show check-able datatable of users
     2. The page should have a button to export the selected users (Excel, PDF), the selection should be which column and users the superadmin want to export
     3. Implement the export functionality in the backend
 5. (Super Admin) Import data template

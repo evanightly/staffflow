@@ -4,9 +4,9 @@
 
 This is laravel 12 project using inertiajs with reactjs as its frontend framework, shadcn and magicui as its component libraries, the main business project is:
 
-1. RBAC, Role: Super Admin and Team using Spatie Permission (Already Installed)
-2. (Super Admin) Manage User Roles
-3. (Super Admin) Import User data:
+1. RBAC, Role: Super Admin and Team using Spatie Permission (Already Installed) ✓
+2. (Super Admin) Manage User Roles ✓
+3. (Super Admin) Import User data: ✓
     1. Upload CSV/Excel file of user list
     2. Store the user data in the database
     3. View list of user as a datatable
@@ -14,8 +14,8 @@ This is laravel 12 project using inertiajs with reactjs as its frontend framewor
     1. Add a page that show check-able datatable of users
     2. The page should have a button to export the selected users (Excel, PDF), the selection should be which column and users the superadmin want to export
     3. Implement the export functionality in the backend
-5. (Super Admin) Import data template
-6. (Team) Only login (for now)
+5. (Super Admin) Import data template ✓
+6. (Team) Only login (for now) ✓
 7. (Super Admin, Team) Dashboard, show user analytics
 
 ## Rules

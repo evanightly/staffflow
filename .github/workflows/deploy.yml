@@ -77,23 +77,22 @@ jobs:
             sed -i "s|../bootstrap/app.php|../laravel-app/bootstrap/app.php|g" deploy-htdocs/index.php
           fi
 
-      - name: Upload Laravel core (outside webroot)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          port: ${{ secrets.FTP_PORT || 21 }}
-          protocol: ${{ env.FTP_PROTOCOL }}
-          local-dir: deploy-app/
-          server-dir: ${{ env.SERVER_APP_DIR }}
-          # Remove files not present locally to keep target clean (safe for a dedicated folder)
-          dangerous-clean-slate: true
-          exclude: |
-            **/.git*
-            **/node_modules/**
+      - name: Package artifacts (zip)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/.deploy
+          # Zip preserves structure and reduces FTP round-trips massively
+          (cd deploy-app && zip -qr ../artifacts/app.zip .)
+          (cd deploy-htdocs && zip -qr ../artifacts/htdocs.zip .)
+          # Copy remote deploy script into bundle folder structure to upload under htdocs/.deploy
+          cp scripts/remote_deploy.php artifacts/.deploy/remote_deploy.php
+          # Inject the secret token into the script (uses inline fallback only for the running copy)
+          if [[ -n "${{ secrets.DEPLOY_TOKEN }}" ]]; then
+            sed -i "s|CHANGE_ME|${{ secrets.DEPLOY_TOKEN }}|g" artifacts/.deploy/remote_deploy.php
+          fi
 
-      - name: Upload public files (htdocs)
+      - name: Upload deploy bundle (zips + deploy script into htdocs/.deploy)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -101,9 +100,16 @@ jobs:
           password: ${{ secrets.FTP_PASS }}
           port: ${{ secrets.FTP_PORT || 21 }}
           protocol: ${{ env.FTP_PROTOCOL }}
-          local-dir: deploy-htdocs/
+          local-dir: artifacts/
           server-dir: ${{ env.SERVER_HTDOCS_DIR }}
-          # This will remove InfinityFree's default index2.html on first deploy
-          dangerous-clean-slate: true
+          dangerous-clean-slate: false
           exclude: |
             **/.git*
+
+      - name: Trigger remote deploy (unzip on server)
+        if: ${{ secrets.PRODUCTION_URL != '' && secrets.DEPLOY_TOKEN != '' }}
+        run: |
+          set -euo pipefail
+          curl -fsSL -X POST \
+            -H "X-Deploy-Token: ${{ secrets.DEPLOY_TOKEN }}" \
+            "${{ secrets.PRODUCTION_URL }}/.deploy/remote_deploy.php" -m 600

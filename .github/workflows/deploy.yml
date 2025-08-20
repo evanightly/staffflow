@@ -78,7 +78,7 @@ jobs:
           fi
 
       - name: Upload Laravel core (outside webroot)
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}
@@ -94,7 +94,7 @@ jobs:
             **/node_modules/**
 
       - name: Upload public files (htdocs)
-        uses: SamKirkland/FTP-Deploy-Action@v4
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
           username: ${{ secrets.FTP_USER }}

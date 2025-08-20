@@ -5,16 +5,33 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        {{-- Inline script to detect system dark mode preference and apply it immediately --}}
+        {{-- Inline script to apply persisted appearance immediately to avoid FOUC --}}
         <script>
             (function() {
-                const appearance = '{{ $appearance ?? "system" }}';
+                try {
+                    var stored = localStorage.getItem('appearance');
+                    if (stored === 'dark' || stored === 'light') {
+                        if (stored === 'dark') {
+                            document.documentElement.classList.add('dark');
+                        } else {
+                            document.documentElement.classList.remove('dark');
+                        }
+                        return; // respect persisted preference
+                    }
+                } catch (e) { /* ignore */ }
 
-                if (appearance === 'system') {
-                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
+                // Fallback to server-provided appearance or system preference
+                var appearance = '{{ $appearance ?? "system" }}';
+                if (appearance === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else if (appearance === 'light') {
+                    document.documentElement.classList.remove('dark');
+                } else {
+                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                     if (prefersDark) {
                         document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
                     }
                 }
             })();

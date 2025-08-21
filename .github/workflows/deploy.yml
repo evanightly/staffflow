@@ -9,8 +9,11 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
+      # Where to upload the Laravel core (non-public) folder on the server (outside webroot)
       SERVER_APP_DIR: /laravel-app/
+      # InfinityFree web root
       SERVER_HTDOCS_DIR: /htdocs/
+      # Default to FTPS (Explicit TLS). Set a repository secret FTP_PROTOCOL=ftp to force plain FTP.
       FTP_PROTOCOL: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
 
     steps:
@@ -67,16 +70,12 @@ jobs:
           rsync -a public/ deploy-htdocs/
 
           # Adjust index.php to point to the sibling /laravel-app folder
+          # From __DIR__.'/../vendor/autoload.php' -> __DIR__.'/../laravel-app/vendor/autoload.php'
+          # From __DIR__.'/../bootstrap/app.php'   -> __DIR__.'/../laravel-app/bootstrap/app.php'
           if [[ -f deploy-htdocs/index.php ]]; then
             sed -i "s|../vendor/autoload.php|../laravel-app/vendor/autoload.php|g" deploy-htdocs/index.php
             sed -i "s|../bootstrap/app.php|../laravel-app/bootstrap/app.php|g" deploy-htdocs/index.php
           fi
-
-      - name: Compress vendor to speed up FTP upload
-        run: |
-          cd deploy-app
-          zip -r -s 9m vendor.zip vendor
-          rm -rf vendor
 
       - name: Upload Laravel core (outside webroot)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -88,11 +87,11 @@ jobs:
           protocol: ${{ env.FTP_PROTOCOL }}
           local-dir: deploy-app/
           server-dir: ${{ env.SERVER_APP_DIR }}
+          # Remove files not present locally to keep target clean (safe for a dedicated folder)
           dangerous-clean-slate: true
           exclude: |
             **/.git*
             **/node_modules/**
-            !vendor.zip
 
       - name: Upload public files (htdocs)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -104,6 +103,7 @@ jobs:
           protocol: ${{ env.FTP_PROTOCOL }}
           local-dir: deploy-htdocs/
           server-dir: ${{ env.SERVER_HTDOCS_DIR }}
+          # This will remove InfinityFree's default index2.html on first deploy
           dangerous-clean-slate: true
           exclude: |
             **/.git*

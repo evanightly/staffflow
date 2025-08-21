@@ -1,4 +1,4 @@
-name: Deploy to InfinityFree via FTP
+name: Deploy Laravel to InfinityFree
 
 on:
   push:
@@ -9,11 +9,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-      # Where to upload the Laravel core (non-public) folder on the server (outside webroot)
-      SERVER_APP_DIR: /laravel-app/
-      # InfinityFree web root
       SERVER_HTDOCS_DIR: /htdocs/
-      # Default to FTPS (Explicit TLS). Set a repository secret FTP_PROTOCOL=ftp to force plain FTP.
       FTP_PROTOCOL: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
 
     steps:
@@ -47,53 +43,59 @@ jobs:
           npm ci || npm install
           npm run build
 
-      - name: Prepare deploy folders (split app and htdocs)
+      - name: Prepare deploy package (all inside htdocs)
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p deploy-app deploy-htdocs
+          mkdir -p deploy-htdocs
 
-          # Copy everything except public and dev-only stuff into deploy-app
+          # Copy everything except dev-only stuff
           rsync -a --delete \
             --exclude ".git/" \
             --exclude ".github/" \
             --exclude "node_modules/" \
             --exclude "tests/" \
-            --exclude "public/" \
             --exclude ".env" \
-            --exclude "storage/framework/cache/*" \
-            --exclude "storage/framework/sessions/*" \
-            --exclude "storage/logs/*" \
-            ./ deploy-app/
+            ./ deploy-htdocs/
 
-          # Copy only the public folder contents into deploy-htdocs
-          rsync -a public/ deploy-htdocs/
+          # Move public folder contents to root of htdocs
+          rsync -a deploy-htdocs/public/ deploy-htdocs/
+          rm -rf deploy-htdocs/public/
 
-          # Adjust index.php to point to the sibling /laravel-app folder
-          # From __DIR__.'/../vendor/autoload.php' -> __DIR__.'/../laravel-app/vendor/autoload.php'
-          # From __DIR__.'/../bootstrap/app.php'   -> __DIR__.'/../laravel-app/bootstrap/app.php'
+          # Fix index.php paths
           if [[ -f deploy-htdocs/index.php ]]; then
-            sed -i "s|../vendor/autoload.php|../laravel-app/vendor/autoload.php|g" deploy-htdocs/index.php
-            sed -i "s|../bootstrap/app.php|../laravel-app/bootstrap/app.php|g" deploy-htdocs/index.php
+            sed -i "s|__DIR__.'/../vendor/autoload.php'|__DIR__.'/vendor/autoload.php'|g" deploy-htdocs/index.php
+            sed -i "s|__DIR__.'/../bootstrap/app.php'|__DIR__.'/bootstrap/app.php'|g" deploy-htdocs/index.php
           fi
 
-      - name: Upload Laravel core (outside webroot)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_HOST }}
-          username: ${{ secrets.FTP_USER }}
-          password: ${{ secrets.FTP_PASS }}
-          port: ${{ secrets.FTP_PORT || 21 }}
-          protocol: ${{ env.FTP_PROTOCOL }}
-          local-dir: deploy-app/
-          server-dir: ${{ env.SERVER_APP_DIR }}
-          # Remove files not present locally to keep target clean (safe for a dedicated folder)
-          dangerous-clean-slate: true
-          exclude: |
-            **/.git*
-            **/node_modules/**
+          # Force overwrite .htaccess
+          cat > deploy-htdocs/.htaccess <<'EOF'
+          <IfModule mod_rewrite.c>
+              RewriteEngine On
 
-      - name: Upload public files (htdocs)
+              # Handle Authorization Header
+              RewriteCond %{HTTP:Authorization} .
+              RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+              # Redirect trailing slashes
+              RewriteCond %{REQUEST_FILENAME} !-d
+              RewriteCond %{REQUEST_URI} (.+)/$
+              RewriteRule ^ %1 [L,R=301]
+
+              # If request does not match a file or directory, route to index.php
+              RewriteCond %{REQUEST_FILENAME} !-d
+              RewriteCond %{REQUEST_FILENAME} !-f
+              RewriteRule ^ index.php [L]
+
+              # Deny access to sensitive files
+              <FilesMatch "(artisan|.env|.git|.env.example|composer.json|composer.lock|package.json|webpack.mix.js|vite.config.js)">
+                  Order allow,deny
+                  Deny from all
+              </FilesMatch>
+          </IfModule>
+          EOF
+
+      - name: Upload to InfinityFree (htdocs)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_HOST }}
@@ -103,7 +105,7 @@ jobs:
           protocol: ${{ env.FTP_PROTOCOL }}
           local-dir: deploy-htdocs/
           server-dir: ${{ env.SERVER_HTDOCS_DIR }}
-          # This will remove InfinityFree's default index2.html on first deploy
           dangerous-clean-slate: true
           exclude: |
             **/.git*
+            **/node_modules/**

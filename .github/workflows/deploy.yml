@@ -75,7 +75,7 @@ jobs:
       - name: Compress vendor to speed up FTP upload
         run: |
           cd deploy-app
-          zip -r vendor.zip vendor
+          zip -r -s 9m vendor.zip vendor
           rm -rf vendor
 
       - name: Upload Laravel core (outside webroot)

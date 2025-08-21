@@ -1,4 +1,4 @@
-name: Deploy to InfinityFree via FTP 
+name: Deploy to InfinityFree via FTP
 
 on:
   push:
@@ -92,6 +92,7 @@ jobs:
           exclude: |
             **/.git*
             **/node_modules/**
+            !vendor.zip
 
       - name: Upload public files (htdocs)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

@@ -95,6 +95,20 @@ jobs:
           </IfModule>
           EOF
 
+      - name: Write .env from secret
+        if: secrets.ENV != ''
+        shell: bash
+        env:
+          SECRET_ENV: ${{ secrets.ENV }}
+        run: |
+          set -euo pipefail
+          # Ensure deploy directory exists (should from previous step)
+          mkdir -p deploy-htdocs
+          # Write the secret contents to the .env in the deploy directory safely
+          printf '%s\n' "$SECRET_ENV" > deploy-htdocs/.env
+          # Lock down perms just in case
+          chmod 600 deploy-htdocs/.env || true
+
       - name: Upload to InfinityFree (htdocs)
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:

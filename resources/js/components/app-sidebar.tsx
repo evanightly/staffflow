@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, Key, LayoutGrid, Shield, User } from 'lucide-react';
+import { BookOpen, FileText, Folder, Key, LayoutGrid, Shield, Upload, User } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -27,6 +27,16 @@ const mainNavItems: NavItem[] = [
         title: 'Users',
         href: '/users',
         icon: User,
+    },
+    {
+        title: 'Data Import',
+        href: '/data',
+        icon: Upload,
+    },
+    {
+        title: 'Data Files',
+        href: '/data/files',
+        icon: FileText,
     },
 ];
 

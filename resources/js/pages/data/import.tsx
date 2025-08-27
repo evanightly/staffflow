@@ -4,23 +4,24 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Download, Eye, FileSpreadsheet, Upload, Users as UsersIcon } from 'lucide-react';
+import { ArrowLeft, Database, Download, FileSpreadsheet, Upload } from 'lucide-react';
 import { ChangeEvent, FormEventHandler, useRef } from 'react';
 
 interface Props {
     templateDownloadUrl: string;
 }
 
-export default function Import({ templateDownloadUrl }: Props) {
+export default function DataImport({ templateDownloadUrl }: Props) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm({
         file: null as File | null,
+        header_row: '',
     });
 
     const handleSubmit: FormEventHandler = (e) => {
         e.preventDefault();
-        post(route('users.import.store'), {
+        post(route('data.process'), {
             onSuccess: () => {
                 reset();
                 if (fileInputRef.current) {
@@ -30,11 +31,6 @@ export default function Import({ templateDownloadUrl }: Props) {
         });
     };
 
-    const handlePreview: FormEventHandler = (e) => {
-        e.preventDefault();
-        post(route('users.import.preview'));
-    };
-
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] || null;
         setData('file', file);
@@ -42,21 +38,21 @@ export default function Import({ templateDownloadUrl }: Props) {
 
     return (
         <AppLayout>
-            <Head title="Import Users" />
+            <Head title="Data Import" />
 
             <div className="space-y-6 p-6 py-6">
                 <div className="flex items-center gap-4">
                     <Button variant="outline" size="sm" asChild>
-                        <Link href={route('users.index')}>
+                        <Link href={route('data.files.index')}>
                             <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Users
+                            Back to Data Files
                         </Link>
                     </Button>
                     <div className="flex items-center gap-3">
-                        <UsersIcon className="h-8 w-8 text-primary" />
+                        <Database className="h-8 w-8 text-primary" />
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight">Import Users</h1>
-                            <p className="text-muted-foreground">Upload Excel or CSV file to import multiple users</p>
+                            <h1 className="text-3xl font-bold tracking-tight">Data Import</h1>
+                            <p className="text-muted-foreground">Upload Excel or CSV file to work with data (not stored in database)</p>
                         </div>
                     </div>
                 </div>
@@ -69,7 +65,7 @@ export default function Import({ templateDownloadUrl }: Props) {
                                 <Download className="h-5 w-5" />
                                 Download Template
                             </CardTitle>
-                            <CardDescription>Download the Excel template to see the required format for importing users</CardDescription>
+                            <CardDescription>Download the Excel template to see the required format</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
@@ -85,16 +81,15 @@ export default function Import({ templateDownloadUrl }: Props) {
                                 </Button>
                                 <div className="text-xs text-muted-foreground">
                                     <p>
-                                        <strong>Required columns:</strong>
+                                        <strong>Template includes sample columns:</strong>
                                     </p>
                                     <ul className="mt-1 list-inside list-disc space-y-1">
-                                        <li>name (required)</li>
-                                        <li>email (required, unique)</li>
-                                        <li>gender (optional: male, female, other)</li>
-                                        <li>address (optional)</li>
-                                        <li>phone_number (optional)</li>
-                                        <li>password (optional, defaults to: password123)</li>
-                                        <li>role (optional: super_admin, team)</li>
+                                        <li>name</li>
+                                        <li>email</li>
+                                        <li>gender</li>
+                                        <li>address</li>
+                                        <li>phone_number</li>
+                                        <li>Any custom columns</li>
                                     </ul>
                                 </div>
                             </div>
@@ -108,14 +103,30 @@ export default function Import({ templateDownloadUrl }: Props) {
                                 <Upload className="h-5 w-5" />
                                 Upload File
                             </CardTitle>
-                            <CardDescription>Upload your Excel (.xlsx, .xls) or CSV file to import users</CardDescription>
+                            <CardDescription>Upload your Excel (.xlsx, .xls) or CSV file to process data</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-4">
+                            <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="file">Import File</Label>
+                                    <Label htmlFor="file">Data File</Label>
                                     <Input ref={fileInputRef} id="file" type="file" accept=".xlsx,.xls,.csv" onChange={handleFileChange} />
                                     {errors.file && <p className="text-sm text-destructive">{errors.file}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="header_row">Header Row (Optional)</Label>
+                                    <Input
+                                        id="header_row"
+                                        type="number"
+                                        min="1"
+                                        placeholder="e.g., 1 for first row, 2 for second row..."
+                                        value={data.header_row}
+                                        onChange={(e) => setData('header_row', e.target.value)}
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Specify which row contains column headers. Leave empty to use default column indices (0, 1, 2...).
+                                    </p>
+                                    {errors.header_row && <p className="text-sm text-destructive">{errors.header_row}</p>}
                                 </div>
 
                                 <div className="rounded-lg border border-dashed p-6 text-center">
@@ -133,33 +144,30 @@ export default function Import({ templateDownloadUrl }: Props) {
                                     )}
                                 </div>
 
-                                <div className="flex gap-2">
-                                    <Button onClick={handlePreview} variant="outline" className="flex-1" disabled={!data.file || processing}>
-                                        {processing ? (
-                                            <>
-                                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                                Processing...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Eye className="mr-2 h-4 w-4" />
-                                                Preview Data
-                                            </>
-                                        )}
-                                    </Button>
-                                    <Button onClick={handleSubmit} className="flex-1" disabled={!data.file || processing}>
-                                        {processing ? (
-                                            <>
-                                                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                                Importing...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Upload className="mr-2 h-4 w-4" />
-                                                Import Directly
-                                            </>
-                                        )}
-                                    </Button>
+                                <Button type="submit" className="w-full" disabled={!data.file || processing}>
+                                    {processing ? (
+                                        <>
+                                            <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload className="mr-2 h-4 w-4" />
+                                            Process Data
+                                        </>
+                                    )}
+                                </Button>
+                            </form>
+
+                            <div className="mt-4 rounded-lg bg-blue-50 p-3 dark:bg-blue-950/20">
+                                <div className="text-xs text-blue-800 dark:text-blue-200">
+                                    <p className="mb-1 font-medium">📝 Important Note:</p>
+                                    <ul className="list-inside list-disc space-y-1">
+                                        <li>Data will NOT be stored in the database</li>
+                                        <li>Data will be displayed in a temporary datatable</li>
+                                        <li>You can select and export specific data</li>
+                                        <li>Session data will be cleared when you leave</li>
+                                    </ul>
                                 </div>
                             </div>
 
@@ -169,9 +177,6 @@ export default function Import({ templateDownloadUrl }: Props) {
                                 </p>
                                 <p>
                                     <strong>Maximum file size:</strong> 10MB
-                                </p>
-                                <p>
-                                    <strong>Note:</strong> Duplicate emails will be skipped
                                 </p>
                             </div>
                         </CardContent>

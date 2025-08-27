@@ -33,6 +33,7 @@ interface Props {
 export default function Export({ users, availableColumns }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
     const [isExporting, setIsExporting] = useState(false);
+    const [removeDuplicates, setRemoveDuplicates] = useState(false);
 
     // TanStack Table state
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -221,6 +222,13 @@ export default function Export({ users, availableColumns }: Props) {
             form.appendChild(input);
         });
 
+        // Add remove duplicates parameter
+        const duplicatesInput = document.createElement('input');
+        duplicatesInput.type = 'hidden';
+        duplicatesInput.name = 'remove_duplicates';
+        duplicatesInput.value = removeDuplicates.toString();
+        form.appendChild(duplicatesInput);
+
         document.body.appendChild(form);
         form.submit();
         document.body.removeChild(form);
@@ -305,6 +313,19 @@ export default function Export({ users, availableColumns }: Props) {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-9"
                             />
+                        </div>
+                        <div className="mt-4 flex items-center space-x-2">
+                            <Checkbox
+                                id="remove-duplicates"
+                                checked={removeDuplicates}
+                                onCheckedChange={(checked) => setRemoveDuplicates(!!checked)}
+                            />
+                            <label
+                                htmlFor="remove-duplicates"
+                                className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                Remove duplicate rows based on visible columns
+                            </label>
                         </div>
                     </CardHeader>
                     <CardContent>

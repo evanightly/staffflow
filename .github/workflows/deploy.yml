@@ -96,7 +96,6 @@ jobs:
           EOF
 
       - name: Write .env from secret
-        if: secrets.ENV != ''
         shell: bash
         env:
           SECRET_ENV: ${{ secrets.ENV }}

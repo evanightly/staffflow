@@ -6,10 +6,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserExportController;
 use App\Http\Controllers\UserImportController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
+    return redirect()->route('login');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {

@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { RoleEnum } from '@/enums/role-enum';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
@@ -69,7 +70,7 @@ export default function Dashboard({ importFiles = [], exportFiles = [], userRole
                         <div>
                             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                             <p className="text-muted-foreground">
-                                {userRole === 'super_admin' ? 'Manage your import and export files' : 'View your exported files'}
+                                {userRole === RoleEnum.SUPER_ADMIN ? 'Manage your import and export files' : 'View your exported files'}
                             </p>
                         </div>
                     </div>
@@ -77,7 +78,7 @@ export default function Dashboard({ importFiles = [], exportFiles = [], userRole
 
                 <div className="grid gap-6">
                     {/* Import Files - Super Admin Only */}
-                    {userRole === 'super_admin' && (
+                    {userRole === RoleEnum.SUPER_ADMIN && (
                         <Card>
                             <CardHeader>
                                 <div className="flex items-center justify-between">
@@ -172,7 +173,7 @@ export default function Dashboard({ importFiles = [], exportFiles = [], userRole
                     )}
 
                     {/* Export Files - For Team Users */}
-                    {userRole === 'team_user' && (
+                    {userRole === RoleEnum.TEAM && (
                         <Card>
                             <CardHeader>
                                 <div className="flex items-center justify-between">
@@ -232,7 +233,7 @@ export default function Dashboard({ importFiles = [], exportFiles = [], userRole
                                                                 <Button size="sm" variant="outline" onClick={() => handleDownload(file)}>
                                                                     <Download className="h-4 w-4" />
                                                                 </Button>
-                                                                <Button
+                                                                {/* <Button
                                                                     size="sm"
                                                                     variant="outline"
                                                                     onClick={() => handleDelete(file)}
@@ -243,7 +244,7 @@ export default function Dashboard({ importFiles = [], exportFiles = [], userRole
                                                                     ) : (
                                                                         <Trash2 className="h-4 w-4" />
                                                                     )}
-                                                                </Button>
+                                                                </Button> */}
                                                             </div>
                                                         </TableCell>
                                                     </TableRow>

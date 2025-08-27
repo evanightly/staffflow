@@ -60,9 +60,9 @@ class DataFileController extends Controller
             abort(403, 'You do not have permission to download import files.');
         }
 
-        if ($file->filetype === 'export' && $file->user_id !== $user->id) {
-            abort(403, 'You can only download your own export files.');
-        }
+        // if ($file->filetype === 'export' && $file->user_id !== $user->id) {
+        //     abort(403, 'You can only download your own export files.');
+        // }
 
         // Check if file exists
         $filePath = $file->filepath;

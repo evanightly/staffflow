@@ -43,6 +43,22 @@ jobs:
           npm ci || npm install
           npm run build
 
+      - name: Ensure public/build exists and copy build output
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Create public directory if it doesn't exist
+          mkdir -p public
+
+          if [[ -d build ]]; then
+            # Remove any previous public/build to ensure a clean copy
+            rm -rf public/build || true
+            # Copy build contents into public/build (preserve structure)
+            rsync -a --delete build/ public/build/
+          else
+            echo "No top-level build/ directory found; skipping copy to public/build"
+          fi
+
       - name: Prepare deploy package (all inside htdocs)
         shell: bash
         run: |
